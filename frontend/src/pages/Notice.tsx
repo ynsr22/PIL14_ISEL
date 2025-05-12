@@ -83,7 +83,7 @@ const Notice: FC = memo(() => {
       title: "6. Code source et accès",
       content: (
         <p className="text-gray-700">
-          Le code source est disponible sur <a href="https://github.com/ynsr22/boutique" className="text-blue-600 underline" target="_blank" rel="noopener noreferrer">GitHub</a> et l’outil est consultable en ligne à <a href="https://projet.srairi.fr" className="text-blue-600 underline" target="_blank" rel="noopener noreferrer">https://projet.srairi.fr</a>.
+          Le code source est disponible sur <a href="https://github.com/ynsr22/PIL14_ISEL" className="text-blue-600 underline" target="_blank" rel="noopener noreferrer">GitHub</a> et l’outil est consultable en ligne à <a href="https://projet.srairi.fr" className="text-blue-600 underline" target="_blank" rel="noopener noreferrer">https://projet.srairi.fr</a>.
         </p>
       ),
     },
