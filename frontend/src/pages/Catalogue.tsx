@@ -46,7 +46,7 @@ export default function Catalogue() {
     selectedDepartments.length > 0 ||
     selectedCategories.length > 0 ||
     sortOption !== "name-asc" ||
-    rechercheContext?.setRecherche;
+    (rechercheContext?.recherche && rechercheContext.recherche.trim().length > 0);
 
     // Fonction pour réinitialiser les filtres
     const handleResetFilters = () => {
@@ -113,7 +113,7 @@ export default function Catalogue() {
 
     recupererMoyens();
     return () => controller.abort();
-  }, []);
+  }, [API_URL]);
 
   const filteredAndSortedItems = useMemo(() => {
     const filtered = items.filter((item: {nom?: string; prix?: number; categorie?: string; departement?:string }) => {

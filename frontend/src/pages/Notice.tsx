@@ -24,27 +24,74 @@ const Notice: FC = memo(() => {
       title: "1. Introduction",
       content: (
         <p className="text-gray-700">
-          Cette notice est un exemple temporaire pour illustrer l'utilisation d'un site web en cours de développement.
-          Le contenu sera mis à jour à mesure que le projet avance et que les fonctionnalités finales seront définies.
+          Dans le cadre du Projet d’Innovation Logistique (PIL) de l’ISEL, notre équipe a été missionnée par Renault pour concevoir une marketplace dédiée à la gestion des commandes de moyens logistiques non motorisés. L’objectif : proposer une solution digitale intuitive, capable de centraliser les besoins internes et de fluidifier les processus de commande.
         </p>
       ),
     },
     {
-      title: "2. Objectifs du site",
+      title: "2. Stack technologique",
       content: (
         <ul className="list-disc pl-6 text-gray-700">
-          <li>Faciliter la commande des moyens logistiques non motorisés.</li>
-          <li>Centraliser les informations pour une meilleure gestion.</li>
-          <li>Offrir une interface intuitive inspirée des boutiques en ligne.</li>
+          <li>Frontend : React.js (SPA), TypeScript, react-router-dom, react-three-fiber, @google/model-viewer, TailwindCSS</li>
+          <li>Backend : Go avec Echo</li>
+          <li>Base de données : PostgreSQL</li>
         </ul>
       ),
     },
     {
-      title: "3. Fonctionnalités futures",
+      title: "3. Infrastructure & déploiement",
+      content: (
+        <ul className="list-disc pl-6 text-gray-700">
+          <li>Docker (conteneurs isolés : frontend, backend, BDD)</li>
+          <li>Reverse proxy : Traefik</li>
+          <li>Hébergement : VPS dédié</li>
+        </ul>
+      ),
+    },
+    {
+      title: "4. Fonctionnalités développées",
+      content: (
+        <ul className="list-disc pl-6 text-gray-700">
+          <li>Catalogue : interface de consultation des moyens disponibles</li>
+          <li>Filtres dynamiques : tri et affinage des résultats en temps réel</li>
+          <li>Panier : ajout, suppression et gestion des articles sélectionnés</li>
+          <li>Bon de commande : génération automatique au format PDF</li>
+          <li>Accessoires : sélection d’accessoires compatibles selon le moyen choisi</li>
+          <li>Visualisation 3D : inspection interactive du moyen dans le navigateur</li>
+          <li>Réalité augmentée : projection du moyen en AR via le navigateur</li>
+        </ul>
+      ),
+    },
+    {
+      title: "5. Évolutions envisageables",
+      content: (
+        <ul className="list-disc pl-6 text-gray-700">
+          <li>Recueil des données et enrichissement du catalogue avec visuels et fichiers 3D</li>
+          <li>Suivi du planning des commandes avec module calendrier et alertes</li>
+          <li>Système de validation multi-étapes structuré par rôles avec notifications</li>
+          <li>Suivi budgétaire et tableau de bord financier avec alertes de dépassement</li>
+          <li>Gestion multi-fournisseurs pour comparaison et attribution des commandes</li>
+          <li>Standardisation multi-sites pour déploiement homogène</li>
+          <li>Gestion des rôles et workflows avec interfaces dédiées</li>
+          <li>Historique des commandes, inventaire départemental et bibliothèque de pratiques</li>
+          <li>Recommandation d’accessoires via algorithme LightGCN</li>
+          <li>Multilingue pour usage international</li>
+        </ul>
+      ),
+    },
+    {
+      title: "6. Code source et accès",
       content: (
         <p className="text-gray-700">
-          Les fonctionnalités incluront la consultation des produits, la configuration personnalisée et la gestion des commandes.
-          Des mises à jour régulières garantiront l'évolution et l'amélioration de l'expérience utilisateur.
+          Le code source est disponible sur <a href="https://github.com/ynsr22/boutique" className="text-blue-600 underline" target="_blank" rel="noopener noreferrer">GitHub</a> et l’outil est consultable en ligne à <a href="https://projet.srairi.fr" className="text-blue-600 underline" target="_blank" rel="noopener noreferrer">https://projet.srairi.fr</a>.
+        </p>
+      ),
+    },
+    {
+      title: "7. Équipe projet",
+      content: (
+        <p className="text-gray-700">
+          Projet réalisé par Amira Aoudia, Souhail Ejnaini et Yanis Srairi, étudiants en cinquième année à l’ISEL.
         </p>
       ),
     },
@@ -52,7 +99,7 @@ const Notice: FC = memo(() => {
 
   return (
     <div className="p-8 max-w-3xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">Notice Exemple</h1>
+      <h1 className="text-3xl font-bold mb-6">Notice</h1>
       {sections.map((section, index) => (
         <Section key={index} title={section.title} content={section.content} />
       ))}

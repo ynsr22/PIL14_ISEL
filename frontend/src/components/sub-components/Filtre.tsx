@@ -88,35 +88,47 @@ const FilterComponent: React.FC<FilterComponentProps> = ({
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [categoriesError, setCategoriesError] = useState<string | null>(null);
 
   const [priceRangeData, setPriceRangeData] = useState<PriceRange>({ min: 0, max: 1000 });
   const [priceRangeLoading, setPriceRangeLoading] = useState(true);
+  const [priceError, setPriceError] = useState<string | null>(null);
 
   // Fetch categories
   useEffect(() => {
+    const controller = new AbortController();
     const fetchCategories = async () => {
       setCategoriesLoading(true);
+      setCategoriesError(null);
       try {
-        const response = await fetch(`${API_URL}/categories`);
+        const response = await fetch(`${API_URL}/categories`, { signal: controller.signal });
         if (!response.ok) throw new Error(`Erreur serveur: ${response.status}`);
         const data = await response.json();
         if (Array.isArray(data)) setCategories(data);
-      } catch (error) {
-        console.error("Erreur lors du chargement des catégories:", error);
+      } catch (error: unknown) {
+        console.error("Erreur chargement catégories:", error);
+        if (error instanceof Error) {
+          setCategoriesError(error.message);
+        } else {
+          setCategoriesError(String(error));
+        }
       } finally {
         setCategoriesLoading(false);
       }
     };
 
     fetchCategories();
+    return () => controller.abort();
   }, []);
 
   // Fetch price range
   useEffect(() => {
+    const controller = new AbortController();
     const fetchPriceRange = async () => {
       setPriceRangeLoading(true);
+      setPriceError(null);
       try {
-        const response = await fetch(`${API_URL}/moyens`);
+        const response = await fetch(`${API_URL}/moyens`, { signal: controller.signal });
         if (!response.ok) throw new Error(`Erreur serveur: ${response.status}`);
         const data = await response.json();
 
@@ -128,14 +140,20 @@ const FilterComponent: React.FC<FilterComponentProps> = ({
           setPriceRangeData({ min, max });
           setPriceRange([min, max]);
         }
-      } catch (error) {
-        console.error("Erreur lors du chargement des prix:", error);
+      } catch (error: unknown) {
+        console.error("Erreur chargement prix:", error);
+        if (error instanceof Error) {
+          setPriceError(error.message);
+        } else {
+          setPriceError(String(error));
+        }
       } finally {
         setPriceRangeLoading(false);
       }
     };
 
     fetchPriceRange();
+    return () => controller.abort();
   }, [setPriceRange]);
 
   const toggleSection = useCallback((section: keyof OpenSections) => {
@@ -192,6 +210,8 @@ const FilterComponent: React.FC<FilterComponentProps> = ({
           <div className="flex justify-center py-2">
             <div className="animate-pulse h-5 w-24 bg-gray-200 rounded"></div>
           </div>
+        ) : categoriesError ? (
+          <p className="text-sm text-red-500">Erreur: {categoriesError}</p>
         ) : categories.length === 0 ? (
           <p className="text-sm text-gray-500">Aucune catégorie disponible</p>
         ) : (
@@ -228,15 +248,15 @@ const FilterComponent: React.FC<FilterComponentProps> = ({
               <div className="animate-pulse h-6 w-16 bg-gray-200 rounded-full"></div>
             </div>
           </div>
+        ) : priceError ? (
+          <p className="text-sm text-red-500">Erreur: {priceError}</p>
         ) : (
-          <>
-            <RangeSlider
-              min={priceRangeData.min}
-              max={priceRangeData.max}
-              value={priceRange}
-              onChange={setPriceRange}
-            />
-          </>
+          <RangeSlider
+            min={priceRangeData.min}
+            max={priceRangeData.max}
+            value={priceRange}
+            onChange={setPriceRange}
+          />
         )}
       </FilterSection>
     </div>

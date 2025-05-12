@@ -1,21 +1,25 @@
 import { memo, useMemo } from "react";
 
+// SECURITY: Ensure all data rendered here (e.g., accessory names) are trusted or sanitized upstream.
+
 interface Accessoire {
-    id: number;
-    nom: string;
-    prix: number;
-    image?: string;
+    readonly id: number;
+    readonly nom: string;
+    readonly prix: number;
+    readonly image?: string;
 }
 
 interface ResumeCommandeProps {
-    quantite: number;
-    accessoiresParDefaut: Accessoire[];
-    selectedAccessoiresOptionnels: Accessoire[];
-    totalPrice: number;
-    prixProduit: number;
+    readonly quantite: number;
+    readonly accessoiresParDefaut?: ReadonlyArray<Accessoire>;
+    readonly selectedAccessoiresOptionnels?: ReadonlyArray<Accessoire>;
+    readonly totalPrice: number;
+    readonly prixProduit: number;
 }
 
-const ResumeCommande = memo(({ quantite, accessoiresParDefaut, selectedAccessoiresOptionnels, totalPrice, prixProduit }: ResumeCommandeProps) => {
+const formatPrice = (price: number) => new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(price);
+
+const ResumeCommande = memo(({ quantite, accessoiresParDefaut = [], selectedAccessoiresOptionnels = [], totalPrice, prixProduit }: ResumeCommandeProps) => {
     const totalPrixAccessoiresParDefaut = useMemo(() => 
         accessoiresParDefaut.reduce((sum, acc) => sum + acc.prix, 0), 
         [accessoiresParDefaut]
@@ -25,8 +29,6 @@ const ResumeCommande = memo(({ quantite, accessoiresParDefaut, selectedAccessoir
         selectedAccessoiresOptionnels.reduce((sum, acc) => sum + acc.prix, 0), 
         [selectedAccessoiresOptionnels]
     );
-
-    const formatPrice = (price: number) => new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(price);
 
     return (
         <div className="bg-gray-50 p-3 rounded-lg h-auto">

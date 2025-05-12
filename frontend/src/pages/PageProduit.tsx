@@ -1,11 +1,15 @@
 import { useParams } from 'react-router-dom';
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
+import { toast } from 'sonner';
 import ResumeCommande from '../components/ResumeCommande';
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Pagination, Autoplay } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/navigation";
 import CarteAccessoire from '../components/CarteAccessoire';
+import { Canvas } from '@react-three/fiber';
+import { OrbitControls, useGLTF, Environment, ContactShadows } from '@react-three/drei';
+import QRCodeGenerator from '../components/QRCodeGenerator';
 
 interface Produit {
   id: number;
@@ -86,15 +90,44 @@ const slidesBreakpoints = {
   1024: { slidesPerView: 4 },
 };
 
+// Component to load and display 3D model
+function Model({ url }: { url: string }) {
+  const { scene } = useGLTF(url);
+  return <primitive object={scene} dispose={null} />;
+}
+
 const PageProduit = () => {
   const { id } = useParams<{ id: string }>();
   const [selectedAccessoires, setSelectedAccessoires] = useState<number[]>([]);
   const [quantite, setQuantite] = useState<number>(QUANTITE_MIN);
 
-  // État pour gérer la notification
-  const [notification, setNotification] = useState<string>("");
+  // State to check 3D model availability
+  const [modelAvailable, setModelAvailable] = useState<boolean | null>(null);
 
-  const API_URL = import.meta.env.VITE_API_URL
+  // State to toggle between image and 3D view
+  const [view3D, setView3D] = useState(false);
+
+  const API_URL = import.meta.env.VITE_API_URL;
+
+  // Check model availability on mount, preload if exists
+  useEffect(() => {
+    if (!id) return;
+    let cancelled = false;
+    const url = `/3d/${id}.glb`;
+    fetch(url, { method: 'HEAD' })
+      .then((res) => {
+        if (!cancelled) {
+          const ct = res.headers.get('content-type')?.toLowerCase() || '';
+          const isGlb = res.ok && (ct.includes('model') || ct.includes('application/octet-stream'));
+          setModelAvailable(isGlb);
+          if (isGlb) useGLTF.preload(url);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setModelAvailable(false);
+      });
+    return () => { cancelled = true; };
+  }, [id]);
 
   const {
     data: produit,
@@ -105,14 +138,14 @@ const PageProduit = () => {
     transformProduit as (data: unknown) => Produit
   );
 
-  const categoryId = produit?.categorie_id;
+  const moyenId = produit?.id;
 
   const {
     data: accessoiresOptionnels,
     loading: loadingAccessoiresOptionnels,
     error: errorAccessoiresOptionnels,
   } = useFetch<Accessoires[]>(
-    categoryId ? `${API_URL}/categories/${categoryId}/accessoires` : null,
+    moyenId ? `${API_URL}/moyens/${moyenId}/accessoires` : null,
     transformAccessoires as (data: unknown) => Accessoires[]
   );
 
@@ -121,7 +154,7 @@ const PageProduit = () => {
     loading: loadingAccessoiresParDefaut,
     error: errorAccessoiresParDefaut,
   } = useFetch<Accessoires[]>(
-    categoryId ? `${API_URL}/categories/${categoryId}/accessoires_defauts` : null,
+    moyenId ? `${API_URL}/moyens/${moyenId}/accessoires_defauts` : null,
     transformAccessoires as (data: unknown) => Accessoires[]
   );
 
@@ -151,7 +184,10 @@ const PageProduit = () => {
     return (((produit?.prix || 0) + prixAccessoiresDefauts + prixAccessoiresOptionnels) * quantite);
   }, [quantite, accessoiresParDefaut, selectedAccessoiresOptionnels, produit?.prix]);
 
-  const handleAjoutPanier = useCallback(() => {
+  const arUrl = useMemo(() => id ? `${window.location.origin}/ar-modele?id=${id}` : '', [id]);
+  const modelUrl = useMemo(() => id ? `/3d/${id}.glb` : '', [id]);
+
+  const handleAjoutPanier = () => {
     if (!produit) return;
     
     const itemPanier = {
@@ -173,21 +209,8 @@ const PageProduit = () => {
     }
 
     localStorage.setItem("panier", JSON.stringify([...panierExistant, itemPanier]));
-
-    // Définition du message de notification
-    setNotification("Produit ajouté au panier avec succès !");
-
-    // Masquage automatique de la notification au bout de 3 secondes
-    setTimeout(() => {
-      setNotification("");
-    }, 3000);
-  }, [
-    produit,
-    quantite,
-    selectedAccessoiresOptionnels,
-    accessoiresParDefaut,
-    totalPrice
-  ]);
+    toast('Article ajouté au panier');
+  };
 
   if (!produit) {
     return <div className="text-red-500">Produit introuvable</div>;
@@ -196,13 +219,6 @@ const PageProduit = () => {
   return (
     <div className="container mx-auto p-4 max-w-4xl">
 
-      {/* Notification simple en position fixe */}
-      {notification && (
-        <div className="fixed top-4 right-4 bg-green-100 text-green-800 px-4 py-2 rounded shadow">
-          {notification}
-        </div>
-      )}
-
       <h1 className="text-xl font-bold mb-4 text-gray-800">
         {produit?.nom ?? "Produit introuvable"}
       </h1>
@@ -210,19 +226,47 @@ const PageProduit = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div>
           {loadingProduit ? (
-            <div className="w-full h-64 bg-gray-200 animate-pulse rounded" />
+            <div className="w-full h-80 sm:h-96 md:h-[500px] bg-gray-200 animate-pulse rounded-lg" />
           ) : errorProduit ? (
             <div className="bg-red-100 text-red-700 p-3 rounded mb-4">
               Erreur : {errorProduit}
             </div>
           ) : (
-            <img
-              src={imageProduit}
-              alt={produit?.nom}
-              width={400}
-              height={400}
-              className="w-full h-auto rounded object-contain"
-            />
+            <div className="relative w-full h-80 sm:h-96 md:h-[500px] mb-4 bg-gray-100 rounded-lg overflow-hidden">
+              {modelAvailable && (
+                <button
+                  onClick={() => setView3D(!view3D)}
+                  className="absolute top-2 right-2 z-10 bg-white/70 text-gray-700 p-1 rounded text-xs hover:bg-white/90 transition"
+                >
+                  {view3D ? '🔙' : '3D'}
+                </button>
+              )}
+              {view3D && modelAvailable ? (
+                <Canvas
+                  camera={{ position: [0, 0, 5], fov: 45 }}
+                  gl={{ toneMappingExposure: 0.65 }}
+                  style={{ background: '#f0f0f0' }}
+                  className="w-full h-full"
+                >
+                  <ambientLight intensity={0.05} />
+                  <directionalLight position={[5, 5, 5]} intensity={0.5} />
+                  <Environment preset="city" blur={0.8} />
+
+                  <Suspense fallback={null}>
+                    <Model url={modelUrl} />
+                  </Suspense>
+
+                  <OrbitControls enableZoom enablePan target={[0, 0, 0]} />
+                  <ContactShadows position={[0, -1, 0]} opacity={0.5} scale={5} blur={1.5} far={1} />
+                </Canvas>
+              ) : (
+                <img
+                  src={imageProduit}
+                  alt={produit?.nom}
+                  className="w-full h-full object-contain p-4"
+                />
+              )}
+            </div>
           )}
         </div>
 
@@ -312,6 +356,13 @@ const PageProduit = () => {
           </div>
         )}
       </div>
+
+      {modelAvailable && (
+        <div className="my-4 flex flex-col items-center">
+          <p className="text-sm text-gray-600 mb-2">Scanner ce QR code pour AR</p>
+          <QRCodeGenerator url={arUrl} size={100} />
+        </div>
+      )}
     </div>
   );
 };
